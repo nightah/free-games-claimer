@@ -1,4 +1,4 @@
-import { firefox } from 'playwright-firefox'; // stealth plugin needs no outdated playwright-extra
+import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement; fingerprint-injector still applied below (unreconciled with Cloak stealth - follow-up)
 import { jsonDb, prompt } from './src/util.js';
 import { cfg } from './src/config.js';
 
@@ -16,7 +16,8 @@ const { fingerprint, headers } = new FingerprintGenerator().getFingerprint({
     operatingSystems: ["windows"],
 });
 
-const context = await firefox.launchPersistentContext(cfg.dir.browser, {
+const context = await launchPersistentContext({
+  userDataDir: cfg.dir.browser,
   headless: cfg.headless,
   // viewport: { width: cfg.width, height: cfg.height },
   locale: 'en-US', // ignore OS locale to be sure to have english text for locators -> done via /en in URL
@@ -25,8 +26,11 @@ const context = await firefox.launchPersistentContext(cfg.dir.browser, {
       width: fingerprint.screen.width,
       height: fingerprint.screen.height,
   },
-  extraHTTPHeaders: {
-      'accept-language': headers['accept-language'],
+  // contextOptions is forwarded to Playwright's context (Cloak only surfaces a few options at the top level)
+  contextOptions: {
+    extraHTTPHeaders: {
+        'accept-language': headers['accept-language'],
+    },
   },
 });
 // await stealth(context);

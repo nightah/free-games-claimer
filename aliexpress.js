@@ -1,5 +1,5 @@
-import { firefox } from 'playwright-firefox'; // stealth plugin needs no outdated playwright-extra
-import { datetime, filenamify, prompt, handleSIGINT, stealth } from './src/util.js';
+import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement; fingerprint-injector still applied below (unreconciled with Cloak stealth - follow-up)
+import { datetime, filenamify, prompt, handleSIGINT } from './src/util.js';
 import { cfg } from './src/config.js';
 
 // using https://github.com/apify/fingerprint-suite worked, but has no launchPersistentContext...
@@ -12,20 +12,26 @@ const { fingerprint, headers } = new FingerprintGenerator().getFingerprint({
     operatingSystems: ["android"],
 });
 
-const context = await firefox.launchPersistentContext(cfg.dir.browser, {
+const context = await launchPersistentContext({
+  userDataDir: cfg.dir.browser,
   headless: cfg.headless,
   // viewport: { width: cfg.width, height: cfg.height },
   locale: 'en-US', // ignore OS locale to be sure to have english text for locators -> done via /en in URL
-  recordVideo: cfg.record ? { dir: 'data/record/', size: { width: cfg.width, height: cfg.height } } : undefined, // will record a .webm video for each page navigated; without size, video would be scaled down to fit 800x800
-  recordHar: cfg.record ? { path: `data/record/aliexpress-${filenamify(datetime())}.har` } : undefined, // will record a HAR file with network requests and responses; can be imported in Chrome devtools
-  handleSIGINT: false, // have to handle ourselves and call context.close(), otherwise recordings from above won't be saved
   userAgent: fingerprint.navigator.userAgent,
   viewport: {
       width: fingerprint.screen.width,
       height: fingerprint.screen.height,
   },
-  extraHTTPHeaders: {
-      'accept-language': headers['accept-language'],
+  // launchOptions/contextOptions are forwarded verbatim to Playwright (Cloak only surfaces a few options at the top level)
+  launchOptions: {
+    recordVideo: cfg.record ? { dir: 'data/record/', size: { width: cfg.width, height: cfg.height } } : undefined, // will record a .webm video for each page navigated; without size, video would be scaled down to fit 800x800
+    recordHar: cfg.record ? { path: `data/record/aliexpress-${filenamify(datetime())}.har` } : undefined, // will record a HAR file with network requests and responses; can be imported in Chrome devtools
+    handleSIGINT: false, // have to handle ourselves and call context.close(), otherwise recordings from above won't be saved
+  },
+  contextOptions: {
+    extraHTTPHeaders: {
+        'accept-language': headers['accept-language'],
+    },
   },
 });
 handleSIGINT(context);

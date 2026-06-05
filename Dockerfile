@@ -8,7 +8,7 @@ FROM ubuntu:jammy
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install up-to-date node & npm, deps for virtual screen & noVNC, firefox, pip for apprise.
+# Install up-to-date node & npm, deps for virtual screen & noVNC, Chromium runtime libs, pip for apprise.
 RUN apt-get update \
     && apt-get install --no-install-recommends -y curl ca-certificates gnupg \
     && mkdir -p /etc/apt/keyrings \
@@ -23,19 +23,26 @@ RUN apt-get update \
       novnc websockify \
       dos2unix \
       python3-pip \
-    # && npx playwright install-deps firefox \
+    # Chromium runtime libs for CloakBrowser's stealth Chromium (replaces the old Firefox deps)
     && apt-get install --no-install-recommends -y \
-      libgtk-3-0 \
-      libasound2 \
-      libxcomposite1 \
-      libpangocairo-1.0-0 \
-      libpango-1.0-0 \
+      libnss3 \
+      libnspr4 \
       libatk1.0-0 \
-      libcairo-gobject2 \
+      libatk-bridge2.0-0 \
+      libcups2 \
+      libdrm2 \
+      libxkbcommon0 \
+      libxcomposite1 \
+      libxdamage1 \
+      libxfixes3 \
+      libxrandr2 \
+      libgbm1 \
+      libasound2 \
+      libatspi2.0-0 \
+      libgtk-3-0 \
+      libpango-1.0-0 \
       libcairo2 \
-      libgdk-pixbuf-2.0-0 \
-      libdbus-glib-1-2 \
-      libxcursor1 \
+      fonts-liberation \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf \
@@ -54,12 +61,11 @@ RUN pip install apprise
 WORKDIR /fgc
 COPY package*.json ./
 
-# Playwright installs patched firefox to ~/.cache/ms-playwright/firefox-*
-# Requires some system deps to run (see inlined install-deps above).
 RUN npm install
-# Old: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD + install firefox (had to be done after `npm install` to get the correct version). Now: playwright-firefox as npm dep and `npm install` will only install that.
-# From 1.38 Playwright will no longer install browser automatically for playwright, but apparently still for playwright-firefox: https://github.com/microsoft/playwright/releases/tag/v1.38.0
-# RUN npx playwright install firefox
+# CloakBrowser auto-downloads its stealth Chromium binary (~200MB) on first run.
+# Pre-download it at build time so the first container run doesn't stall on the fetch.
+# Requires the Chromium system libs installed above to actually launch.
+RUN node -e "import('cloakbrowser').then(m => m.ensureBinary())"
 
 COPY . .
 

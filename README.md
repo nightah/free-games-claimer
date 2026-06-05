@@ -41,14 +41,14 @@ Data (including json files with claimed games, codes to redeem, screenshots) is 
 5. To get updates: `git pull; npm install`
 6. Run `node epic-games`, `node prime-gaming`, `node gog`...
 
-During `npm install` Playwright will download its Firefox to a cache in home ([doc](https://playwright.dev/docs/browsers#managing-browser-binaries)).
-If you are missing some dependencies for the browser on your system, you can use `sudo npx playwright install firefox --with-deps`.
+The scripts use [CloakBrowser](https://github.com/CloakHQ/CloakBrowser), a Chromium-based drop-in Playwright replacement with built-in stealth. Its stealth Chromium binary (~200MB) is downloaded automatically on the first run (and cached for later runs).
+If you are missing some system libraries for Chromium on your system, install the usual Chromium runtime deps (e.g. on Debian/Ubuntu: `libnss3 libnspr4 libatk-bridge2.0-0 libgbm1 libasound2`, see the `Dockerfile` for the full list).
 
 If you don't want to use Docker for quasi-headless mode, you could run inside a virtual machine, on a server, or you wake your PC at night to avoid being interrupted.
 </details>
 
 ## Usage
-All scripts start an automated Firefox instance, either with the browser GUI shown or hidden (*headless mode*). By default, you won't see any browser open on your host system.
+All scripts start an automated Chromium instance (via CloakBrowser), either with the browser GUI shown or hidden (*headless mode*). By default, you won't see any browser open on your host system.
 
 - When running inside Docker, the browser will be shown only inside the container. You can open http://localhost:6080 to interact with the browser running inside the container via noVNC (or use other VNC clients on port 5900).
 - When running the scripts outside of Docker, the browser will be hidden by default; you can use `SHOW=1 ...` to show the UI (see options below).
