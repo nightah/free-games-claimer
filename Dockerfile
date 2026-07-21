@@ -43,6 +43,19 @@ RUN apt-get update \
       libpango-1.0-0 \
       libcairo2 \
       fonts-liberation \
+    # Fonts CloakBrowser needs to pass anti-bot canvas checks when spoofing Windows on Linux:
+    # aggressive systems (Kasada, Akamai) hash hidden canvas renders of emoji and extended
+    # character sets, so a thin font set is itself a detection signal. See
+    # https://github.com/CloakHQ/cloakbrowser#font-setup-on-linux
+    # (Real Windows typefaces - Segoe UI, Calibri, Bahnschrift - further improve CreepJS font
+    # scoring but are not redistributable; supply them via --fingerprint-fonts-dir if wanted.)
+    && apt-get install --no-install-recommends -y \
+      fonts-noto-color-emoji \
+      fonts-freefont-ttf \
+      fonts-unifont \
+      fonts-ipafont-gothic \
+      fonts-wqy-zenhei \
+      fonts-tlwg-loma-otf \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf \
@@ -57,6 +70,14 @@ RUN apt-get update \
 
 RUN ln -s /usr/share/novnc/vnc_auto.html /usr/share/novnc/index.html
 RUN pip install apprise
+
+# Microsoft typefaces that CloakBrowser probes for when spoofing Windows (Segoe UI, Calibri,
+# Consolas, ...). Without them it warns "Incomplete Windows font set" and the font fingerprint
+# betrays that the host is Linux. These are proprietary and cannot come from apt.
+# Build with --build-arg MS_FONTS=0 to skip - see install-ms-fonts.sh for the licensing caveat.
+ARG MS_FONTS=1
+COPY install-ms-fonts.sh /tmp/
+RUN MS_FONTS=${MS_FONTS} bash /tmp/install-ms-fonts.sh && rm /tmp/install-ms-fonts.sh
 
 WORKDIR /fgc
 COPY package*.json ./
