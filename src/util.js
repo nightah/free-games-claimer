@@ -14,6 +14,14 @@ export const resolve = (...a) => a.length && a[0] == '0' ? null : path.resolve(.
 import { JSONFilePreset } from 'lowdb/node';
 export const jsonDb = (file, defaultData) => JSONFilePreset(dataDir(file), defaultData);
 
+// TOTP (2FA) code generation. otplib 13 replaced the `authenticator` singleton with functional
+// generate(). Its default guardrail rejects secrets shorter than 16 bytes, but otplib 12 and
+// Google Authenticator's 80-bit/16-char secrets are shorter, so lower MIN_SECRET_BYTES to stay
+// backward-compatible with existing OTP secrets. Verified to produce identical codes to otplib 12.
+import { generateSync, createGuardrails } from 'otplib';
+const otpGuardrails = createGuardrails({ MIN_SECRET_BYTES: 10 });
+export const totp = secret => generateSync({ secret, guardrails: otpGuardrails });
+
 export const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 // date and time as UTC (no timezone offset) in nicely readable and sortable format, e.g., 2022-10-06 12:05:27.313
 export const datetimeUTC = (d = new Date()) => d.toISOString().replace('T', ' ').replace('Z', '');
