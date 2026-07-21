@@ -9,6 +9,11 @@ const screenshot = (...a) => resolve(cfg.dir.screenshots, 'prime-gaming', ...a);
 // const URL_LOGIN = 'https://www.amazon.de/ap/signin'; // wrong. needs some session args to be valid?
 const URL_CLAIM = 'https://gaming.amazon.com/home';
 
+// Prime Gaming game/claim detail pages migrated to Luna. gaming.amazon.com/claims/... now redirects to
+// luna.amazon.com/claims/claims/... (a 404 due to the doubled /claims path), so build /claims/ detail URLs on
+// luna directly. Non-/claims slugs (and the home/tab pages) still work on gaming.amazon.com.
+const gameUrl = (slug) => (slug.startsWith('/claims/') ? 'https://luna.amazon.com' : 'https://gaming.amazon.com') + slug.split('?')[0];
+
 console.log(datetime(), 'started checking prime-gaming');
 
 const db = await jsonDb('prime-gaming.json', {});
@@ -158,7 +163,7 @@ try {
     await card.scrollIntoViewIfNeeded();
     const title = await (await card.$('.item-card-details__body__primary')).innerText();
     const slug = await (await card.$('a')).getAttribute('href');
-    const url = 'https://gaming.amazon.com' + slug.split('?')[0];
+    const url = gameUrl(slug);
     console.log('Current free game:', chalk.blue(title));
     if (cfg.pg_timeLeft && await skipBasedOnTime(url)) continue;
     if (cfg.dryrun) continue;
@@ -176,7 +181,7 @@ try {
   for (const card of external) { // need to get data incl. URLs in this loop and then navigate in another, otherwise .all() would update after coming back and .elementHandles() like above would lead to error due to page navigation: elementHandle.$: Protocol error (Page.adoptNode)
     const title = await card.locator('.item-card-details__body__primary').innerText();
     const slug = await card.locator('a:has-text("Claim")').first().getAttribute('href');
-    const url = 'https://gaming.amazon.com' + slug.split('?')[0];
+    const url = gameUrl(slug);
     // await (await card.$('text=Claim')).click(); // goes to URL of game, no need to wait
     external_info.push({ title, url });
   }
@@ -377,7 +382,7 @@ try {
     const dlcs = await Promise.all(cards.map(async card => ({
       game: await card.locator('.item-card-details__body p').innerText(),
       title: await card.locator('.item-card-details__body__primary').innerText(),
-      url: 'https://gaming.amazon.com' + await card.locator('a').first().getAttribute('href'),
+      url: gameUrl(await card.locator('a').first().getAttribute('href')),
     })));
     // console.log(dlcs);
 

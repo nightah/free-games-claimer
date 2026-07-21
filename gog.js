@@ -49,12 +49,11 @@ try {
 
   // page.click('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll').catch(_ => { }); // does not work reliably, solved by setting CookieConsent above
   const signIn = page.locator('a:has-text("Sign in")').first();
-  // In Docker we run headed Chromium inside Xvfb, which reports (pointer: coarse)/(hover: none), so GOG hides both
-  // 'Sign in' and #menuUsername via its 'hide-on-touch-device' rule. The elements stay attached to the DOM, so we
-  // detect login state by presence of #menuUsername and trigger the login by dispatching the click event, rather
-  // than relying on visibility (which would never become true under the touch layout). See issue #335.
-  await Promise.any([signIn.waitFor({ state: 'attached' }), page.waitForSelector('#menuUsername', { state: 'attached' })]);
-  while (await page.locator('#menuUsername').count() === 0) {
+  // GOG reworked its header: the old #menuUsername element is gone, replaced by .menu-account__user-name
+  // inside .js-menu-account (shown via ng-show="account.isUserLoggedIn"). We detect login state by its presence
+  // and trigger login by dispatching the click event on 'Sign in' (works regardless of the element's visibility).
+  await Promise.any([signIn.waitFor({ state: 'attached' }), page.waitForSelector('.menu-account__user-name', { state: 'attached' })]);
+  while (await page.locator('.menu-account__user-name').count() === 0) {
     console.error('Not signed in anymore.');
     await signIn.dispatchEvent('click'); // element may be hidden under the touch layout; dispatch fires Angular's ng-click regardless
     // it then creates an iframe for the login
@@ -87,7 +86,7 @@ try {
         notify('gog: got captcha during login. Please check.');
         // TODO solve reCAPTCHA?
       }).catch(_ => { });
-      await page.waitForSelector('#menuUsername', { state: 'attached' });
+      await page.waitForSelector('.menu-account__user-name', { state: 'attached' });
     } else {
       console.log('Waiting for you to login in the browser.');
       await notify('gog: no longer signed in and not enough options set for automatic login.');
@@ -97,10 +96,10 @@ try {
         process.exit(1);
       }
     }
-    await page.waitForSelector('#menuUsername', { state: 'attached' });
+    await page.waitForSelector('.menu-account__user-name', { state: 'attached' });
     if (!cfg.debug) context.setDefaultTimeout(cfg.timeout);
   }
-  user = await page.locator('#menuUsername').first().textContent(); // innerText is uppercase due to styling!
+  user = (await page.locator('.menu-account__user-name').first().textContent()).trim();
   console.log(`Signed in as ${user}`);
   db.data[user] ||= {};
 
