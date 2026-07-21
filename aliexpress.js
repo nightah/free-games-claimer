@@ -8,8 +8,8 @@ import { FingerprintInjector } from 'fingerprint-injector';
 import { FingerprintGenerator } from 'fingerprint-generator';
 
 const { fingerprint, headers } = new FingerprintGenerator().getFingerprint({
-    devices: ["mobile"],
-    operatingSystems: ["android"],
+  devices: ['mobile'],
+  operatingSystems: ['android'],
 });
 
 const context = await launchPersistentContext({
@@ -19,8 +19,8 @@ const context = await launchPersistentContext({
   locale: 'en-US', // ignore OS locale to be sure to have english text for locators -> done via /en in URL
   userAgent: fingerprint.navigator.userAgent,
   viewport: {
-      width: fingerprint.screen.width,
-      height: fingerprint.screen.height,
+    width: fingerprint.screen.width,
+    height: fingerprint.screen.height,
   },
   // launchOptions/contextOptions are forwarded verbatim to Playwright (Cloak only surfaces a few options at the top level)
   launchOptions: {
@@ -30,7 +30,7 @@ const context = await launchPersistentContext({
   },
   contextOptions: {
     extraHTTPHeaders: {
-        'accept-language': headers['accept-language'],
+      'accept-language': headers['accept-language'],
     },
   },
 });
@@ -42,7 +42,7 @@ context.setDefaultTimeout(cfg.debug ? 0 : cfg.timeout);
 
 const page = context.pages().length ? context.pages()[0] : await context.newPage(); // should always exist
 
-const auth = async (url) => {
+const auth = async url => {
   console.log('auth', url);
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   // redirects to https://login.aliexpress.com/?return_url=https%3A%2F%2Fwww.aliexpress.com%2Fp%2Fcoin-pc-index%2Findex.html
@@ -86,6 +86,7 @@ const urls = {
   merge: 'https://m.aliexpress.com/p/merge-market/index.html',
 };
 
+// eslint-disable-next-line no-unused-vars -- toggled on by uncommenting in the run list below
 const coins = async () => {
   // await auth(urls.coins);
   await Promise.any([page.locator('.checkin-button').click(), page.locator('.addcoin').waitFor()]);
@@ -94,14 +95,17 @@ const coins = async () => {
   console.log('Tomorrow:', await page.locator('.addcoin').innerText());
 };
 
+// eslint-disable-next-line no-unused-vars -- toggled on by uncommenting in the run list below
 const grow = async () => {
   await page.pause();
 };
 
+// eslint-disable-next-line no-unused-vars -- toggled on by uncommenting in the run list below
 const gogo = async () => {
   await page.pause();
 };
 
+// eslint-disable-next-line no-unused-vars -- toggled on by uncommenting in the run list below
 const euro = async () => {
   await page.pause();
 };
@@ -118,7 +122,9 @@ try {
     // gogo,
     // euro,
     merge,
-  ].reduce((a, f) => a.then(async _ => { await auth(urls[f.name]); await f(); console.log() }), Promise.resolve());
+  ].reduce((a, f) => a.then(async _ => {
+    await auth(urls[f.name]); await f(); console.log();
+  }), Promise.resolve());
 
   // await page.pause();
 } catch (error) {

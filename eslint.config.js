@@ -15,7 +15,8 @@ export default [
   {
     // files: ['*.js'],
     languageOptions: {
-      globals: globals.node,
+      // node for the scripts themselves; browser for code passed to page.evaluate() etc.
+      globals: { ...globals.node, ...globals.browser },
     },
     plugins: {
       '@stylistic/js': stylistic,

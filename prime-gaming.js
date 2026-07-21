@@ -12,7 +12,7 @@ const URL_CLAIM = 'https://gaming.amazon.com/home';
 // Prime Gaming game/claim detail pages migrated to Luna. gaming.amazon.com/claims/... now redirects to
 // luna.amazon.com/claims/claims/... (a 404 due to the doubled /claims path), so build /claims/ detail URLs on
 // luna directly. Non-/claims slugs (and the home/tab pages) still work on gaming.amazon.com.
-const gameUrl = (slug) => (slug.startsWith('/claims/') ? 'https://luna.amazon.com' : 'https://gaming.amazon.com') + slug.split('?')[0];
+const gameUrl = slug => (slug.startsWith('/claims/') ? 'https://luna.amazon.com' : 'https://gaming.amazon.com') + slug.split('?')[0];
 
 console.log(datetime(), 'started checking prime-gaming');
 
@@ -138,25 +138,25 @@ try {
   // bottom to top: oldest to newest games
   internal.reverse();
   external.reverse();
-  const sameOrNewPage = async url => new Promise(async (resolve, _reject) => {
+  const sameOrNewPage = async url => {
     const isNew = page.url() != url;
     let p = page;
     if (isNew) {
       p = await context.newPage();
       await p.goto(url, { waitUntil: 'domcontentloaded' });
     }
-    resolve([p, isNew]);
-  });
+    return [p, isNew];
+  };
   const skipBasedOnTime = async url => {
     // console.log('  Checking time left for game:', url);
     const [p, isNew] = await sameOrNewPage(url);
     const dueDateOrg = await p.locator('.availability-date .tw-bold').innerText();
     const dueDate = new Date(Date.parse(dueDateOrg + ' 17:00'));
-    const daysLeft = (dueDate.getTime() - Date.now())/1000/60/60/24;
+    const daysLeft = (dueDate.getTime() - Date.now()) / 1000 / 60 / 60 / 24;
     console.log(' ', await p.locator('.availability-date').innerText(), '->', daysLeft.toFixed(2));
     if (isNew) await p.close();
     return daysLeft > cfg.pg_timeLeft;
-  }
+  };
   console.log('\nNumber of free unclaimed games (Prime Gaming):', internal.length);
   // claim games in internal store
   for (const card of internal) {
@@ -307,7 +307,7 @@ try {
                 if (j?.events?.cart.length && j.events.cart[0]?.data?.reason == 'UserAlreadyOwnsContent') {
                   redeem_action = 'already redeemed';
                   console.error('  error: UserAlreadyOwnsContent');
-                } else if (true) { // TODO what's returned on success?
+                } else { // TODO what's returned on success?
                   redeem_action = 'redeemed';
                   db.data[user][title].status = 'claimed and redeemed?';
                   console.log('  Redeemed successfully? Please report if not in https://github.com/vogler/free-games-claimer/issues/5');
@@ -373,7 +373,7 @@ try {
     await loot.waitFor();
 
     process.stdout.write('Loading all DLCs on page...');
-    await scrollUntilStable(() => loot.locator('[data-a-target="item-card"]').count())
+    await scrollUntilStable(() => loot.locator('[data-a-target="item-card"]').count());
 
     console.log('\nNumber of already claimed DLC:', await loot.locator('p:has-text("Collected")').count());
 
