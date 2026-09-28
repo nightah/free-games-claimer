@@ -2,7 +2,7 @@ import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-i
 import chalk from 'chalk';
 import path from 'path';
 import { existsSync, writeFileSync } from 'fs';
-import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, totp } from './src/util.js';
+import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, totp, fingerprintSeed } from './src/util.js';
 import { cfg } from './src/config.js';
 
 const screenshot = (...a) => resolve(cfg.dir.screenshots, 'epic-games', ...a);
@@ -21,6 +21,7 @@ if (cfg.time) console.time('startup');
 // Previously the website showed an hcaptcha on login and in the last claim step; Cloak's stealth replaces the old Firefox + webgl.disabled workarounds.
 const context = await launchPersistentContext({
   userDataDir: cfg.dir.browser,
+  args: [`--fingerprint=${fingerprintSeed()}`], // stable device identity across runs, see fingerprintSeed
   headless: cfg.headless,
   humanize: true,
   viewport: { width: cfg.width, height: cfg.height },
@@ -281,7 +282,7 @@ try {
         console.log('  Claimed successfully!');
         // context.setDefaultTimeout(cfg.timeout);
       } catch (e) {
-        console.log(e);
+        console.error(e); // same stream as the message below, so they stay in order
         // console.error('  Failed to claim! Try again if NopeCHA timed out. Click the extension to see if you ran out of credits (refill after 24h). To avoid captchas try to get a new IP or set a cookie from https://www.hcaptcha.com/accessibility');
         console.error('  Failed to claim! To avoid captchas try to get a new IP address.');
         const p = screenshot('failed', `${game_id}_${filenamify(datetime())}.png`);

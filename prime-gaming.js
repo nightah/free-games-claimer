@@ -1,6 +1,6 @@
 import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement with built-in stealth
 import chalk from 'chalk';
-import { resolve, jsonDb, datetime, filenamify, prompt, confirm, notify, html_game_list, handleSIGINT, totp } from './src/util.js';
+import { resolve, jsonDb, datetime, filenamify, prompt, confirm, notify, html_game_list, handleSIGINT, totp, fingerprintSeed } from './src/util.js';
 import { cfg } from './src/config.js';
 
 const screenshot = (...a) => resolve(cfg.dir.screenshots, 'prime-gaming', ...a);
@@ -20,6 +20,7 @@ const db = await jsonDb('prime-gaming.json', {});
 // https://playwright.dev/docs/auth#multi-factor-authentication
 const context = await launchPersistentContext({
   userDataDir: cfg.dir.browser,
+  args: [`--fingerprint=${fingerprintSeed()}`], // stable device identity across runs, see fingerprintSeed
   headless: cfg.headless,
   humanize: true,
   viewport: { width: cfg.width, height: cfg.height },

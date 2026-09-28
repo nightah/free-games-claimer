@@ -2,9 +2,14 @@
 
 set -eo pipefail # exit on error, error on any fail in pipe (not just last cmd); add -x to print each cmd; see gist bash_strict_mode.md
 
-echo "Version: https://github.com/vogler/free-games-claimer/tree/${COMMIT}"
-[ ! -z $BRANCH ] && [ $BRANCH != "main" ] && echo "Branch: ${BRANCH}"
-echo "Build: $NOW"
+# COMMIT, BRANCH and NOW are build args set by CI; a local `docker build` without them leaves them empty.
+if [ -n "$COMMIT" ]; then
+  echo "Version: https://github.com/vogler/free-games-claimer/tree/${COMMIT}"
+else
+  echo "Version: unknown (image built without --build-arg COMMIT=...)"
+fi
+[ -n "$BRANCH" ] && [ "$BRANCH" != "main" ] && echo "Branch: ${BRANCH}"
+[ -n "$NOW" ] && echo "Build: $NOW"
 
 # Remove chromium profile lock.
 # When running in docker and then killing it, on the next run chromium displayed a dialog to unlock the profile which made the script time out.

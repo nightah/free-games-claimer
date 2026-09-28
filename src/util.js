@@ -22,6 +22,20 @@ import { generateSync, createGuardrails } from 'otplib';
 const otpGuardrails = createGuardrails({ MIN_SECRET_BYTES: 10 });
 export const totp = secret => generateSync({ secret, guardrails: otpGuardrails });
 
+// CloakBrowser draws a random --fingerprint seed on every launch. With our persistent, logged-in profile that makes the
+// same session present as a different device on each run, which costs trust with anti-bot systems (e.g. Epic's hcaptcha
+// at checkout). Pin one seed per browser profile instead: FINGERPRINT_SEED if set, else generated once and stored in it.
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+export const fingerprintSeed = () => {
+  if (cfg.fingerprint_seed) return cfg.fingerprint_seed;
+  const file = path.join(cfg.dir.browser, 'fingerprint-seed');
+  if (existsSync(file)) return readFileSync(file, 'utf8').trim();
+  const seed = String(Math.floor(Math.random() * 90000) + 10000); // same range as CloakBrowser's own seeds
+  mkdirSync(cfg.dir.browser, { recursive: true });
+  writeFileSync(file, seed);
+  return seed;
+};
+
 export const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 // date and time as UTC (no timezone offset) in nicely readable and sortable format, e.g., 2022-10-06 12:05:27.313
 export const datetimeUTC = (d = new Date()) => d.toISOString().replace('T', ' ').replace('Z', '');

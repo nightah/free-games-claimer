@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import { dataDir } from './util.js';
 
-dotenv.config({ path: 'data/config.env' }); // loads env vars from file - will not set vars that are already set, i.e., can overwrite values from file by prefixing, e.g., VAR=VAL node ...
+dotenv.config({ path: 'data/config.env', quiet: true }); // loads env vars from file - will not set vars that are already set, i.e., can overwrite values from file by prefixing, e.g., VAR=VAL node ...
 
 // Options - also see table in README.md
 export const cfg = {
@@ -17,6 +17,7 @@ export const cfg = {
   },
   width: Number(process.env.WIDTH) || 1920, // width of the opened browser
   height: Number(process.env.HEIGHT) || 1080, // height of the opened browser
+  fingerprint_seed: process.env.FINGERPRINT_SEED, // CloakBrowser fingerprint seed; generated once per browser profile if unset
   timeout: (Number(process.env.TIMEOUT) || 60) * 1000, // default timeout for playwright is 30s
   login_timeout: (Number(process.env.LOGIN_TIMEOUT) || 180) * 1000, // higher timeout for login, will wait twice: prompt + wait for manual login
   novnc_port: process.env.NOVNC_PORT, // running in docker if set

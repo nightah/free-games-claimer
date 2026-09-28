@@ -125,6 +125,11 @@ ENV DEPTH 24
 # Show browser instead of running headless
 ENV SHOW 1
 
+# The image pins the cloakbrowser package and pre-downloads its Chromium above, so skip the runtime update checks:
+# the npm "Update available" notice isn't actionable inside the container, and a newer binary would be re-downloaded
+# (~200MB) into every fresh container instead of being baked into the image.
+ENV CLOAKBROWSER_AUTO_UPDATE=false
+
 # Script to setup display server & VNC is always executed.
 ENTRYPOINT ["docker-entrypoint.sh"]
 # Default command to run. This is replaced by appending own command, e.g. `docker run ... node prime-gaming` to only run this script.

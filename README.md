@@ -76,6 +76,7 @@ Available options/variables and their default values:
 | NOTIFY        	|         	| Notification services to use (Pushover, Slack, Telegram...), see below. [Apprise](https://github.com/caronc/apprise)	|
 | NOTIFY_TITLE  	|         	| Optional title for notifications, e.g. for Pushover.                   	|
 | BROWSER_DIR   	| data/browser	| Directory for browser profile, e.g. for multiple accounts.         	|
+| FINGERPRINT_SEED	|         	| CloakBrowser fingerprint seed (10000-99999). Generated once and kept in the browser profile if unset, so each run looks like the same device. 	|
 | TIMEOUT       	| 60      	| Timeout for any page action. Should be fine even on slow machines.     	|
 | LOGIN_TIMEOUT 	| 180     	| Timeout for login in seconds. Will wait twice (prompt + manual login). 	|
 | EMAIL         	|         	| Default email for any login.                                           	|

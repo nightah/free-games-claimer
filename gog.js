@@ -1,6 +1,6 @@
 import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement with built-in stealth
 import chalk from 'chalk';
-import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT } from './src/util.js';
+import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, fingerprintSeed } from './src/util.js';
 import { cfg } from './src/config.js';
 
 const screenshot = (...a) => resolve(cfg.dir.screenshots, 'gog', ...a);
@@ -19,6 +19,7 @@ if (cfg.width < 1280) { // otherwise 'Sign in' and #menuUsername are hidden (but
 // https://playwright.dev/docs/auth#multi-factor-authentication
 const context = await launchPersistentContext({
   userDataDir: cfg.dir.browser,
+  args: [`--fingerprint=${fingerprintSeed()}`], // stable device identity across runs, see fingerprintSeed
   headless: cfg.headless,
   humanize: true,
   viewport: { width: cfg.width, height: cfg.height },
@@ -48,14 +49,20 @@ try {
   await page.goto(URL_CLAIM, { waitUntil: 'domcontentloaded' }); // default 'load' takes forever
 
   // page.click('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll').catch(_ => { }); // does not work reliably, solved by setting CookieConsent above
-  const signIn = page.locator('a:has-text("Sign in")').first();
-  // GOG reworked its header: the old #menuUsername element is gone, replaced by .menu-account__user-name
-  // inside .js-menu-account (shown via ng-show="account.isUserLoggedIn"). We detect login state by its presence
-  // and trigger login by dispatching the click event on 'Sign in' (works regardless of the element's visibility).
-  await Promise.any([signIn.waitFor({ state: 'attached' }), page.waitForSelector('.menu-account__user-name', { state: 'attached' })]);
-  while (await page.locator('.menu-account__user-name').count() === 0) {
+  // GOG reworked its header again (menu-v3): 'Sign in' is now a <button gog-menu-v3-auth-action="login">, and the
+  // username element is always in the DOM (showing 'Account' when anonymous), so it can't signal login state anymore.
+  // Instead ask the endpoint the menu itself reads: /userData.json has isLoggedIn and username. Fetching it from the
+  // page also avoids racing Angular, which only toggles nav.menu-v3--logged-in after that request completes.
+  const signIn = page.locator('[gog-menu-v3-auth-action="login"]').first();
+  const loggedIn = page.locator('nav.menu-v3--logged-in');
+  const userData = async () => { // login may reload the page, so wait for it before evaluating
+    await page.waitForLoadState('domcontentloaded');
+    return page.evaluate(() => fetch('/userData.json').then(r => r.json()));
+  };
+  let data = await userData();
+  while (!data.isLoggedIn) {
     console.error('Not signed in anymore.');
-    await signIn.dispatchEvent('click'); // element may be hidden under the touch layout; dispatch fires Angular's ng-click regardless
+    await signIn.dispatchEvent('click'); // element may be hidden under the touch layout; dispatch fires the click handler regardless
     // it then creates an iframe for the login
     await page.waitForSelector('#GalaxyAccountsFrameContainer iframe'); // TODO needed?
     const iframe = page.frameLocator('#GalaxyAccountsFrameContainer iframe');
@@ -86,7 +93,7 @@ try {
         notify('gog: got captcha during login. Please check.');
         // TODO solve reCAPTCHA?
       }).catch(_ => { });
-      await page.waitForSelector('.menu-account__user-name', { state: 'attached' });
+      await loggedIn.waitFor({ state: 'attached' });
     } else {
       console.log('Waiting for you to login in the browser.');
       await notify('gog: no longer signed in and not enough options set for automatic login.');
@@ -96,10 +103,11 @@ try {
         process.exit(1);
       }
     }
-    await page.waitForSelector('.menu-account__user-name', { state: 'attached' });
+    await loggedIn.waitFor({ state: 'attached' });
     if (!cfg.debug) context.setDefaultTimeout(cfg.timeout);
+    data = await userData();
   }
-  user = (await page.locator('.menu-account__user-name').first().textContent()).trim();
+  user = data.username;
   console.log(`Signed in as ${user}`);
   db.data[user] ||= {};
 

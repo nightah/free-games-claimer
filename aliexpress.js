@@ -1,5 +1,5 @@
 import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement; fingerprint-injector still applied below (unreconciled with Cloak stealth - follow-up)
-import { datetime, filenamify, prompt, handleSIGINT } from './src/util.js';
+import { datetime, filenamify, prompt, handleSIGINT, fingerprintSeed } from './src/util.js';
 import { cfg } from './src/config.js';
 
 // using https://github.com/apify/fingerprint-suite worked, but has no launchPersistentContext...
@@ -14,6 +14,7 @@ const { fingerprint, headers } = new FingerprintGenerator().getFingerprint({
 
 const context = await launchPersistentContext({
   userDataDir: cfg.dir.browser,
+  args: [`--fingerprint=${fingerprintSeed()}`], // stable device identity across runs, see fingerprintSeed
   headless: cfg.headless,
   // viewport: { width: cfg.width, height: cfg.height },
   locale: 'en-US', // ignore OS locale to be sure to have english text for locators -> done via /en in URL
