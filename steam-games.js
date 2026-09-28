@@ -1,5 +1,5 @@
 import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement; fingerprint-injector still applied below (unreconciled with Cloak stealth - follow-up)
-import { jsonDb, prompt, fingerprintSeed } from './src/util.js';
+import { jsonDb, prompt, fingerprintSeed, dumpFailure } from './src/util.js';
 import { cfg } from './src/config.js';
 
 const db = await jsonDb('steam-games.json', {});
@@ -71,6 +71,7 @@ try {
   process.exitCode ||= 1;
   console.error('--- Exception:');
   console.error(error); // .toString()?
+  if (process.exitCode != 130) await dumpFailure(page, 'steam-games', error);
 } finally {
   await db.write(); // write out json db
 }

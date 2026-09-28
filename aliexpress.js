@@ -1,5 +1,5 @@
 import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement; fingerprint-injector still applied below (unreconciled with Cloak stealth - follow-up)
-import { datetime, filenamify, prompt, handleSIGINT, fingerprintSeed } from './src/util.js';
+import { datetime, filenamify, prompt, handleSIGINT, fingerprintSeed, dumpFailure } from './src/util.js';
 import { cfg } from './src/config.js';
 
 // using https://github.com/apify/fingerprint-suite worked, but has no launchPersistentContext...
@@ -132,6 +132,7 @@ try {
   process.exitCode ||= 1;
   console.error('--- Exception:');
   console.error(error); // .toString()?
+  if (process.exitCode != 130) await dumpFailure(page, 'aliexpress', error);
 }
 if (page.video()) console.log('Recorded video:', await page.video().path());
 await context.close();

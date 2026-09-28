@@ -77,6 +77,7 @@ Available options/variables and their default values:
 | NOTIFY_TITLE  	|         	| Optional title for notifications, e.g. for Pushover.                   	|
 | BROWSER_DIR   	| data/browser	| Directory for browser profile, e.g. for multiple accounts.         	|
 | FINGERPRINT_SEED	|         	| CloakBrowser fingerprint seed (10000-99999). Generated once and kept in the browser profile if unset, so each run looks like the same device. 	|
+| DEBUG_DUMP    	| 1       	| On failure, log a summary of what the page showed and save its HTML, screenshot and error to `data/debug/`. Set to 0 to disable. 	|
 | TIMEOUT       	| 60      	| Timeout for any page action. Should be fine even on slow machines.     	|
 | LOGIN_TIMEOUT 	| 180     	| Timeout for login in seconds. Will wait twice (prompt + manual login). 	|
 | EMAIL         	|         	| Default email for any login.                                           	|

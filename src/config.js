@@ -7,6 +7,7 @@ dotenv.config({ path: 'data/config.env', quiet: true }); // loads env vars from 
 export const cfg = {
   debug: process.env.DEBUG == '1' || process.env.PWDEBUG == '1', // runs non-headless and opens https://playwright.dev/docs/inspector
   debug_network: process.env.DEBUG_NETWORK == '1', // log network requests and responses
+  debug_dump: process.env.DEBUG_DUMP != '0', // on failure, log an aria snapshot of the page and save its HTML, screenshot and error to data/debug/
   record: process.env.RECORD == '1', // `recordHar` (network) + `recordVideo`
   time: process.env.TIME == '1', // log duration of each step
   dryrun: process.env.DRYRUN == '1', // don't claim anything

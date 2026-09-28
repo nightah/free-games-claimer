@@ -1,6 +1,6 @@
 import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement with built-in stealth
 import chalk from 'chalk';
-import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, fingerprintSeed } from './src/util.js';
+import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, fingerprintSeed, dumpFailure } from './src/util.js';
 import { cfg } from './src/config.js';
 
 const screenshot = (...a) => resolve(cfg.dir.screenshots, 'gog', ...a);
@@ -162,6 +162,7 @@ try {
   process.exitCode ||= 1;
   console.error('--- Exception:');
   console.error(error); // .toString()?
+  if (process.exitCode != 130) await dumpFailure(page, 'gog', error);
   if (error.message && process.exitCode != 130) notify(`gog failed: ${error.message.split('\n')[0]}`);
 } finally {
   await db.write(); // write out json db

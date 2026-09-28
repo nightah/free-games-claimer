@@ -2,7 +2,7 @@ import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-i
 import chalk from 'chalk';
 import path from 'path';
 import { existsSync, writeFileSync } from 'fs';
-import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, totp, fingerprintSeed } from './src/util.js';
+import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, totp, fingerprintSeed, dumpFailure } from './src/util.js';
 import { cfg } from './src/config.js';
 
 const screenshot = (...a) => resolve(cfg.dir.screenshots, 'epic-games', ...a);
@@ -283,6 +283,7 @@ try {
         // context.setDefaultTimeout(cfg.timeout);
       } catch (e) {
         console.error(e); // same stream as the message below, so they stay in order
+        await dumpFailure(page, 'epic-games', e);
         // console.error('  Failed to claim! Try again if NopeCHA timed out. Click the extension to see if you ran out of credits (refill after 24h). To avoid captchas try to get a new IP or set a cookie from https://www.hcaptcha.com/accessibility');
         console.error('  Failed to claim! To avoid captchas try to get a new IP address.');
         const p = screenshot('failed', `${game_id}_${filenamify(datetime())}.png`);
@@ -301,6 +302,7 @@ try {
   process.exitCode ||= 1;
   console.error('--- Exception:');
   console.error(error); // .toString()?
+  if (process.exitCode != 130) await dumpFailure(page, 'epic-games', error);
   if (error.message && process.exitCode != 130) notify(`epic-games failed: ${error.message.split('\n')[0]}`);
 } finally {
   await db.write(); // write out json db

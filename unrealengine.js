@@ -4,7 +4,7 @@
 import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement with built-in stealth
 import path from 'path';
 import { writeFileSync } from 'fs';
-import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, totp, fingerprintSeed } from './src/util.js';
+import { resolve, jsonDb, datetime, filenamify, prompt, notify, html_game_list, handleSIGINT, totp, fingerprintSeed, dumpFailure } from './src/util.js';
 import { cfg } from './src/config.js';
 
 const screenshot = (...a) => resolve(cfg.dir.screenshots, 'unrealengine', ...a);
@@ -180,7 +180,8 @@ try {
       console.log('Claimed successfully!');
       // context.setDefaultTimeout(cfg.timeout);
     } catch (e) {
-      console.log(e);
+      console.error(e);
+      await dumpFailure(page, 'unrealengine', e);
       // console.error('  Failed to claim! Try again if NopeCHA timed out. Click the extension to see if you ran out of credits (refill after 24h). To avoid captchas try to get a new IP or set a cookie from https://www.hcaptcha.com/accessibility');
       console.error('  Failed to claim! To avoid captchas try to get a new IP address.');
       await page.screenshot({ path: screenshot('failed', `${filenamify(datetime())}.png`), fullPage: true });
@@ -196,6 +197,7 @@ try {
   process.exitCode ||= 1;
   console.error('--- Exception:');
   console.error(error); // .toString()?
+  if (process.exitCode != 130) await dumpFailure(page, 'unrealengine', error);
   if (error.message && process.exitCode != 130) notify(`unrealengine failed: ${error.message.split('\n')[0]}`);
 } finally {
   await db.write(); // write out json db

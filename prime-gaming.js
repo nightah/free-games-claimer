@@ -1,6 +1,6 @@
 import { launchPersistentContext } from 'cloakbrowser'; // Chromium-based drop-in Playwright replacement with built-in stealth
 import chalk from 'chalk';
-import { resolve, jsonDb, datetime, filenamify, prompt, confirm, notify, html_game_list, handleSIGINT, totp, fingerprintSeed } from './src/util.js';
+import { resolve, jsonDb, datetime, filenamify, prompt, confirm, notify, html_game_list, handleSIGINT, totp, fingerprintSeed, dumpFailure } from './src/util.js';
 import { cfg } from './src/config.js';
 
 const screenshot = (...a) => resolve(cfg.dir.screenshots, 'prime-gaming', ...a);
@@ -428,6 +428,7 @@ try {
         // await page.pause();
       } catch (error) {
         console.error(error);
+        await dumpFailure(page, 'prime-gaming', error);
       } finally {
         await page.goto(URL_CLAIM, { waitUntil: 'domcontentloaded' });
         await page.click('button[data-type="InGameLoot"]');
@@ -439,6 +440,7 @@ try {
   process.exitCode ||= 1;
   console.error('--- Exception:');
   console.error(error); // .toString()?
+  if (process.exitCode != 130) await dumpFailure(page, 'prime-gaming', error);
   if (error.message && process.exitCode != 130) notify(`prime-gaming failed: ${error.message.split('\n')[0]}`);
 } finally {
   await db.write(); // write out json db
